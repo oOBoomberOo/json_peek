@@ -47,10 +47,32 @@ impl<'a> LexerIter<'a> {
 		&self.source[self.span.range()]
 	}
 
-	fn lex_while(&mut self, f: impl Fn(char) -> bool) {
+	fn previous_token_is(&self, token: char) -> bool {
+		self.previous_token() == Some(token)
+	}
+
+	fn previous_token(&self) -> Option<char> {
+		let span = self.span.end_point() - Span::new(1, 1);
+		let token = &self.source.get(span.range())?;
+		token.chars().next()
+	}
+
+	fn lex_until(&mut self, f: impl Fn(char, &mut LexerIter) -> bool) {
 		while let Some(token) = self.stream.peek() {
 			let &(index, token) = token;
-			if !f(token) {
+			self.span.end = index;
+			self.stream.next();
+
+			if !f(token, self) {
+				break;
+			}
+		}
+	}
+
+	fn lex_while(&mut self, f: impl Fn(char, &mut LexerIter) -> bool) {
+		while let Some(token) = self.stream.peek() {
+			let &(index, token) = token;
+			if !f(token, self) {
 				break;
 			}
 			self.span.end = index;
@@ -58,13 +80,18 @@ impl<'a> LexerIter<'a> {
 		}
 	}
 
+	fn lex_string(&mut self) -> Token<'a> {
+		self.lex_until(|token, iter| !token.is_quote() || iter.previous_token_is('\\') || iter.span.is_point());
+		Token::new_string(self.span, self.source)
+	}
+
 	fn lex_identifier(&mut self) -> Token<'a> {
-		self.lex_while(|x| x.is_identifier());
+		self.lex_while(|x, _| x.is_identifier());
 		Token::new_identifier(self.span, self.source)
 	}
 
 	fn lex_number(&mut self) -> Token<'a> {
-		self.lex_while(|x| x.is_number());
+		self.lex_while(|x, _| x.is_number());
 		Token::new_number(self.span, self.source)
 	}
 }
@@ -77,12 +104,14 @@ impl<'a> Iterator for LexerIter<'a> {
 		self.span.start = index;
 		self.span.end = index;
 
-		let result = if token.is_symbol() {
-			Token::new_symbol(self.span, self.source)
+		let result = if token.is_quote() {
+			self.lex_string()
 		} else if token.is_number() {
 			self.lex_number()
 		} else if token.is_identifier() {
 			self.lex_identifier()
+		} else if token.is_symbol() {
+			Token::new_symbol(self.span, self.source)
 		} else if token.is_whitespace() {
 			self.next()?
 		} else {
@@ -104,6 +133,7 @@ impl<'a> From<&'a str> for LexerIter<'a> {
 trait ExtendedChar {
 	fn is_number(&self) -> bool;
 	fn is_symbol(&self) -> bool;
+	fn is_quote(&self) -> bool;
 	fn is_identifier(&self) -> bool;
 }
 
@@ -113,7 +143,11 @@ impl ExtendedChar for char {
 	}
 
 	fn is_symbol(&self) -> bool {
-		*self == '{' || *self == '}' || *self == '[' || *self == ']' || *self == '"' || *self == ',' || *self == ':'
+		*self == '{' || *self == '}' || *self == '[' || *self == ']' || *self == ',' || *self == ':' || self.is_quote()
+	}
+
+	fn is_quote(&self) -> bool {
+		*self == '"'
 	}
 
 	fn is_identifier(&self) -> bool {
@@ -132,26 +166,9 @@ mod tests {
 		let lexer = Lexer::new(content);
 		let mut lexer = lexer.into_iter();
 
-		assert_eq!(
-			lexer.next(),
-			Some(Token::new_symbol(Span::new(0, 0), &content))
-		);
-		assert_eq!(
-			lexer.next(),
-			Some(Token::new_symbol(Span::new(1, 1), &content))
-		);
-		assert_eq!(
-			lexer.next(),
-			Some(Token::new_identifier(Span::new(2, 12), &content))
-		);
-		assert_eq!(
-			lexer.next(),
-			Some(Token::new_symbol(Span::new(13, 13), &content))
-		);
-		assert_eq!(
-			lexer.next(),
-			Some(Token::new_symbol(Span::new(14, 14), &content))
-		);
+		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(0, 0), &content)));
+		assert_eq!(lexer.next(), Some(Token::new_string(Span::new(1, 13), &content)));
+		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(14, 14), &content)));
 		assert_eq!(lexer.next(), None);
 	}
 
@@ -168,14 +185,10 @@ mod tests {
 		let mut lexer = Lexer::new(content).into_iter();
 
 		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(3, 3), &content)));
-		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(8, 8), &content)));
-		assert_eq!(lexer.next(), Some(Token::new_identifier(Span::new(9, 11), &content)));
-		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(12, 12), &content)));
+		assert_eq!(lexer.next(), Some(Token::new_string(Span::new(8, 12), &content)));
 		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(13, 13), &content)));
 		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(15, 15), &content)));
-		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(21, 21), &content)));
-		assert_eq!(lexer.next(), Some(Token::new_identifier(Span::new(22, 24), &content)));
-		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(25, 25), &content)));
+		assert_eq!(lexer.next(), Some(Token::new_string(Span::new(21, 25), &content)));
 		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(26, 26), &content)));
 		assert_eq!(lexer.next(), Some(Token::new_number(Span::new(28, 29), &content)));
 		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(34, 34), &content)));

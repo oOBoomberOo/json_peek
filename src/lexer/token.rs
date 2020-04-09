@@ -21,6 +21,10 @@ impl<'a> Token<'a> {
 		Token::new(span, source, TokenKind::Symbol)
 	}
 
+	pub const fn new_string(span: Span, source: &'a str) -> Token<'a> {
+		Token::new(span, source, TokenKind::String)
+	}
+
 	pub const fn new_identifier(span: Span, source: &'a str) -> Token<'a> {
 		Token::new(span, source, TokenKind::Identifier)
 	}
@@ -42,6 +46,7 @@ impl fmt::Debug for Token<'_> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenKind {
+	String,
 	Number,
 	Symbol,
 	Identifier,

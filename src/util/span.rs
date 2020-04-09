@@ -15,6 +15,18 @@ impl Span {
 	pub const fn range(&self) -> RangeInclusive<usize> {
 		self.start..=self.end
 	}
+
+	pub const fn start_point(&self) -> Span {
+		Span { start: self.start, end: self.start }
+	}
+
+	pub const fn end_point(&self) -> Span {
+		Span { start: self.end, end: self.end }
+	}
+
+	pub const fn is_point(&self) -> bool {
+		self.start == self.end
+	}
 }
 
 impl Add<usize> for Span {
@@ -58,6 +70,17 @@ impl Add<Span> for Span {
 		Span {
 			start: self.start + rhs.start,
 			end: self.end + rhs.end
+		}
+	}
+}
+
+impl Sub<Span> for Span {
+	type Output = Span;
+
+	fn sub(self, rhs: Span) -> Span {
+		Span {
+			start: self.start - rhs.start,
+			end: self.end - rhs.end
 		}
 	}
 }
