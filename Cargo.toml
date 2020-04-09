@@ -1,0 +1,17 @@
+[package]
+name = "json-parser"
+version = "0.1.0"
+authors = ["oOBoomberOo <boombercmd123@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "json_parser"
+path = "src/main.rs"
+
+[lib]
+name = "json_parser"
+path = "src/lib.rs"
+
+[dependencies]
