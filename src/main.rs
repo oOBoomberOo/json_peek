@@ -1,15 +1,14 @@
-use json_parser::lexer::Lexer;
+use json_parser::parser::Parser;
 
 fn main() {
 	let content = r#"
 	{
-		"foo": {
-			"bar": 42
-		}
+		"foo": 1,
+		"bar": 2
 	}
 	"#;
 
-	let lexer = Lexer::new(content);
-	let result: Vec<_> = lexer.into_iter().collect();
+	let parser = Parser::new(content);
+	let result = parser.parse();
 	println!("{:#?}", result);
 }

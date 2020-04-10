@@ -3,5 +3,5 @@
 
 mod util;
 mod value;
-mod parser;
+pub mod parser;
 pub mod lexer;

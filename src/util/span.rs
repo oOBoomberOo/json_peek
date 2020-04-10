@@ -1,7 +1,8 @@
 use std::ops::{Add, Sub, AddAssign, SubAssign};
 use std::ops::RangeInclusive;
+use std::fmt;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Clone, Copy, PartialEq, Eq, Default, Hash)]
 pub struct Span {
 	pub start: usize,
 	pub end: usize
@@ -24,8 +25,26 @@ impl Span {
 		Span { start: self.end, end: self.end }
 	}
 
+	/// Zero-width `Span` is considered to be a point
 	pub const fn is_point(&self) -> bool {
 		self.start == self.end
+	}
+
+	pub const fn trim(&self, offset: usize) -> Span {
+		Span::new(self.start + offset, self.end - offset)
+	}
+
+	#[allow(clippy::wrong_self_convention)]
+	pub fn from_span(left: Span, right: Span) -> Span {
+		let start = left.start.min(right.start);
+		let end = left.end.max(right.end);
+		Span::new(start, end)
+	}
+
+	#[cfg(test)]
+	/// Span value for testing purpose
+	pub const fn test() -> Span {
+		Span::new(0, 0)
 	}
 }
 
@@ -92,6 +111,12 @@ impl AddAssign<Span> for Span {
 	}
 }
 
+impl fmt::Debug for Span {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "{}..{}", self.start, self.end)
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -114,5 +139,10 @@ mod tests {
 	#[test]
 	fn add_span() {
 		assert_eq!(Span::new(0, 9) + Span::new(5, 8), Span { start: 5, end: 17 });
+	}
+
+	#[test]
+	fn sub_span() {
+		assert_eq!(Span::new(5, 10) - Span::new(3, 4), Span { start: 2, end: 6 });
 	}
 }

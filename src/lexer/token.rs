@@ -1,7 +1,8 @@
 use crate::util::Span;
 use std::fmt;
+use std::str::FromStr;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Eq)]
 pub struct Token<'a> {
 	pub span: Span,
 	source: &'a str,
@@ -36,11 +37,72 @@ impl<'a> Token<'a> {
 	pub fn value(&self) -> &str {
 		&self.source[self.span.range()]
 	}
+
+	pub const fn trim(&self, offset: usize) -> Token<'a> {
+		let span = self.span.trim(offset);
+		Token::new(span, self.source, self.kind)
+	}
+
+	#[cfg(test)]
+	pub const fn test(value: &'a str, kind: TokenKind) -> Token<'a> {
+		let span = Span::new(0, value.len() - 1);
+		Token::new(span, value, kind)
+	}
+
+	#[cfg(test)]
+	pub const fn test_symbol(value: &'a str) -> Token<'a> {
+		Token::test(value, TokenKind::Symbol)
+	}
+
+	#[cfg(test)]
+	pub const fn test_string(value: &'a str) -> Token<'a> {
+		Token::test(value, TokenKind::String)
+	}
+
+	#[cfg(test)]
+	pub const fn test_number(value: &'a str) -> Token<'a> {
+		Token::test(value, TokenKind::Number)
+	}
+
+	#[cfg(test)]
+	pub const fn test_identifier(value: &'a str) -> Token<'a> {
+		Token::test(value, TokenKind::Identifier)
+	}
+
+	#[cfg(test)]
+	pub const fn test_unknown(value: &'a str) -> Token<'a> {
+		Token::test(value, TokenKind::Unknown)
+	}
 }
 
 impl fmt::Debug for Token<'_> {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		write!(f, "{:?} ({:?})", self.value(), self.span.range())
+	}
+}
+
+impl PartialEq for Token<'_> {
+	fn eq(&self, other: &Token) -> bool {
+		self.value() == other.value() && self.kind == other.kind
+	}
+}
+
+impl<'a> PartialEq<char> for Token<'a> {
+	fn eq(&self, other: &char) -> bool {
+		self.value().chars().next().as_ref() == Some(other)
+	}
+}
+
+impl Into<f64> for Token<'_> {
+	fn into(self) -> f64 {
+		let value = self.value();
+		f64::from_str(value).unwrap_or_default()
+	}
+}
+
+impl Into<String> for Token<'_> {
+	fn into(self) -> String {
+		self.value().to_owned()
 	}
 }
 

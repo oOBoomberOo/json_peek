@@ -3,7 +3,7 @@ use std::iter::Peekable;
 use std::str::CharIndices;
 
 mod token;
-use token::Token;
+pub use token::{Token, TokenKind};
 
 type TokenStream<'a> = Peekable<CharIndices<'a>>;
 
@@ -57,6 +57,7 @@ impl<'a> LexerIter<'a> {
 		token.chars().next()
 	}
 
+	/// Continue lexing base on the given function, will *include* the last item with the result
 	fn lex_until(&mut self, f: impl Fn(char, &mut LexerIter) -> bool) {
 		while let Some(token) = self.stream.peek() {
 			let &(index, token) = token;
@@ -69,6 +70,7 @@ impl<'a> LexerIter<'a> {
 		}
 	}
 
+	/// Continue lexing base on the given function, will *exclude* the last item from the result
 	fn lex_while(&mut self, f: impl Fn(char, &mut LexerIter) -> bool) {
 		while let Some(token) = self.stream.peek() {
 			let &(index, token) = token;
@@ -80,16 +82,19 @@ impl<'a> LexerIter<'a> {
 		}
 	}
 
+	/// Lex string literal
 	fn lex_string(&mut self) -> Token<'a> {
 		self.lex_until(|token, iter| !token.is_quote() || iter.previous_token_is('\\') || iter.span.is_point());
 		Token::new_string(self.span, self.source)
 	}
 
+	/// Lex identifier literal
 	fn lex_identifier(&mut self) -> Token<'a> {
 		self.lex_while(|x, _| x.is_identifier());
 		Token::new_identifier(self.span, self.source)
 	}
 
+	/// Lex number literal
 	fn lex_number(&mut self) -> Token<'a> {
 		self.lex_while(|x, _| x.is_number());
 		Token::new_number(self.span, self.source)
@@ -166,9 +171,9 @@ mod tests {
 		let lexer = Lexer::new(content);
 		let mut lexer = lexer.into_iter();
 
-		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(0, 0), &content)));
-		assert_eq!(lexer.next(), Some(Token::new_string(Span::new(1, 13), &content)));
-		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(14, 14), &content)));
+		assert_eq!(lexer.next(), Token::test_symbol("{").into());
+		assert_eq!(lexer.next(), Token::test_string("\"hello_world\"").into());
+		assert_eq!(lexer.next(), Token::test_symbol("}").into());
 		assert_eq!(lexer.next(), None);
 	}
 
@@ -184,15 +189,15 @@ mod tests {
 
 		let mut lexer = Lexer::new(content).into_iter();
 
-		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(3, 3), &content)));
-		assert_eq!(lexer.next(), Some(Token::new_string(Span::new(8, 12), &content)));
-		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(13, 13), &content)));
-		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(15, 15), &content)));
-		assert_eq!(lexer.next(), Some(Token::new_string(Span::new(21, 25), &content)));
-		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(26, 26), &content)));
-		assert_eq!(lexer.next(), Some(Token::new_number(Span::new(28, 29), &content)));
-		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(34, 34), &content)));
-		assert_eq!(lexer.next(), Some(Token::new_symbol(Span::new(38, 38), &content)));
+		assert_eq!(lexer.next(), Token::test_symbol("{").into());
+		assert_eq!(lexer.next(), Token::test_string("\"foo\"").into());
+		assert_eq!(lexer.next(), Token::test_symbol(":").into());
+		assert_eq!(lexer.next(), Token::test_symbol("{").into());
+		assert_eq!(lexer.next(), Token::test_string("\"bar\"").into());
+		assert_eq!(lexer.next(), Token::test_symbol(":").into());
+		assert_eq!(lexer.next(), Token::test_number("42").into());
+		assert_eq!(lexer.next(), Token::test_symbol("}").into());
+		assert_eq!(lexer.next(), Token::test_symbol("}").into());
 		assert_eq!(lexer.next(), None);
 	}
 }
