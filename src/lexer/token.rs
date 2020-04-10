@@ -43,33 +43,27 @@ impl<'a> Token<'a> {
 		Token::new(span, self.source, self.kind)
 	}
 
-	#[cfg(test)]
 	pub const fn test(value: &'a str, kind: TokenKind) -> Token<'a> {
 		let span = Span::new(0, value.len() - 1);
 		Token::new(span, value, kind)
 	}
 
-	#[cfg(test)]
 	pub const fn test_symbol(value: &'a str) -> Token<'a> {
 		Token::test(value, TokenKind::Symbol)
 	}
 
-	#[cfg(test)]
 	pub const fn test_string(value: &'a str) -> Token<'a> {
 		Token::test(value, TokenKind::String)
 	}
 
-	#[cfg(test)]
 	pub const fn test_number(value: &'a str) -> Token<'a> {
 		Token::test(value, TokenKind::Number)
 	}
 
-	#[cfg(test)]
 	pub const fn test_identifier(value: &'a str) -> Token<'a> {
 		Token::test(value, TokenKind::Identifier)
 	}
 
-	#[cfg(test)]
 	pub const fn test_unknown(value: &'a str) -> Token<'a> {
 		Token::test(value, TokenKind::Unknown)
 	}
@@ -78,6 +72,12 @@ impl<'a> Token<'a> {
 impl fmt::Debug for Token<'_> {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		write!(f, "{:?} ({:?})", self.value(), self.span.range())
+	}
+}
+
+impl fmt::Display for Token<'_> {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "{}", self.value())
 	}
 }
 

@@ -8,7 +8,11 @@ fn main() {
 	}
 	"#;
 
-	let parser = Parser::new(content);
-	let result = parser.parse();
-	println!("{:#?}", result);
+	let mut parser = Parser::new(content);
+	let result = parser.parse_all();
+
+	match result {
+		Ok(v) => println!("{:#?}", v),
+		Err(e) => println!("{}", e)
+	}
 }

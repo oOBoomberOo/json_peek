@@ -15,3 +15,4 @@ name = "json_parser"
 path = "src/lib.rs"
 
 [dependencies]
+thiserror = "1.0.14"
