@@ -1,6 +1,6 @@
-use crate::lexer::{Lexer, Token, LexerIter};
-use crate::value::Value;
+use crate::lexer::{Lexer, LexerIter, Token};
 use crate::util::Span;
+use crate::value::Value;
 use std::collections::HashMap;
 
 mod error;
@@ -10,7 +10,7 @@ pub type ParseResult<'a> = Result<Value, ParseError<'a>>;
 
 pub struct Parser<'a> {
 	inner: LexerIter<'a>,
-	pos: Span
+	pos: Span,
 }
 
 impl<'a> Parser<'a> {
@@ -20,14 +20,13 @@ impl<'a> Parser<'a> {
 		Parser { inner, pos }
 	}
 
-	pub fn parse_all(&'a mut self) -> ParseResult {
-		self.parse()
-	}
-
 	pub fn parse(&mut self) -> ParseResult<'a> {
-		let token: Token = self.inner.next().ok_or(ParseError::UnexpectedEndOfFile(self.pos))?;
+		let token: Token = self
+			.inner
+			.next()
+			.ok_or(ParseError::UnexpectedEndOfFile(self.pos))?;
 		self.pos = token.span;
-		
+
 		if token == '{' {
 			self.parse_object(token)
 		} else if token == '[' {
@@ -53,7 +52,10 @@ impl<'a> Parser<'a> {
 			let value = self.parse()?;
 			list.insert(key, value);
 
-			let token = self.inner.next().ok_or(ParseError::UnexpectedEndOfFile(self.pos))?;
+			let token = self
+				.inner
+				.next()
+				.ok_or(ParseError::UnexpectedEndOfFile(self.pos))?;
 			last_token = token;
 
 			if token == '}' {
@@ -69,13 +71,13 @@ impl<'a> Parser<'a> {
 
 	fn parse_array(&mut self, token: Token) -> ParseResult<'a> {
 		let mut list = Vec::default();
-		
+
 		list.push(self.parse()?);
 		let mut last_token = token;
-		
+
 		while let Some(token) = self.inner.next() {
 			last_token = token;
-			
+
 			if token == ']' {
 				break;
 			} else if token != ',' {
@@ -83,7 +85,7 @@ impl<'a> Parser<'a> {
 			}
 			list.push(self.parse()?);
 		}
-		
+
 		let span = Span::from_span(token.span, last_token.span);
 		Ok(Value::new_array(span, list))
 	}
@@ -118,7 +120,7 @@ mod tests {
 		"#;
 
 		let mut parser = Parser::new(content);
-		let result = parser.parse_all().unwrap();
+		let result = parser.parse().unwrap();
 
 		let map = hashmap! {
 			Value::test_string("foo") => Value::test_number(42.0)
@@ -127,7 +129,6 @@ mod tests {
 
 		assert_eq!(result, Value::test_object(map));
 	}
-
 
 	#[test]
 	fn try_parse_nested_stuff() {
@@ -143,15 +144,57 @@ mod tests {
 		"#;
 
 		let mut parser = Parser::new(content);
-		let result = parser.parse_all().unwrap();
+		let result = parser.parse().unwrap();
 
-		assert_eq!(result, Value::test_object(hashmap! {
-			Value::test_string("foo") => Value::test_number(42.0)
-			Value::test_string("bar") => Value::test_object(hashmap! {
-				Value::test_string("a") => Value::test_array(vec![Value::test_number(1.0), Value::test_number(2.0), Value::test_number(3.0)])
-				Value::test_string("b") => Value::test_bool(false)
+		assert_eq!(
+			result,
+			Value::test_object(hashmap! {
+				Value::test_string("foo") => Value::test_number(42.0)
+				Value::test_string("bar") => Value::test_object(hashmap! {
+					Value::test_string("a") => Value::test_array(vec![Value::test_number(1.0), Value::test_number(2.0), Value::test_number(3.0)])
+					Value::test_string("b") => Value::test_bool(false)
+				})
+				Value::test_string("baz") => Value::test_null()
 			})
-			Value::test_string("baz") => Value::test_null()
-		}));
+		);
+	}
+
+	#[test]
+	fn parse_with_extra_comma() {
+		let content = r#"
+		{
+			"foo": 1,
+			"bar": 2,
+		}
+		"#;
+
+		let mut parser = Parser::new(content);
+		let result = parser.parse();
+
+		assert_eq!(
+			result,
+			Err(ParseError::InvalidToken(Token::test_symbol("}")))
+		);
+	}
+
+	#[test]
+	fn parse_with_incorrect_json() {
+		let content = r#"
+		[
+			"foo": 1,
+			"bar": 2,
+		]
+		"#;
+
+		let mut parser = Parser::new(content);
+		let result = parser.parse();
+
+		assert_eq!(
+			result,
+			Err(ParseError::UnexpectedToken(
+				Token::test_symbol(":"),
+				Token::test_symbol(",")
+			))
+		);
 	}
 }

@@ -1,6 +1,6 @@
-use thiserror::Error;
-use crate::util::Span;
 use crate::lexer::Token;
+use crate::util::Span;
+use thiserror::Error;
 
 #[derive(Debug, Error, PartialEq, Eq, Clone)]
 pub enum ParseError<'a> {
@@ -11,5 +11,5 @@ pub enum ParseError<'a> {
 	InvalidToken(Token<'a>),
 
 	#[error("Unexpected Token: {0}, expecting: {1}")]
-	UnexpectedToken(Token<'a>, Token<'a>)
+	UnexpectedToken(Token<'a>, Token<'a>),
 }

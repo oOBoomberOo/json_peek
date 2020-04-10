@@ -96,7 +96,7 @@ impl<'a> From<Token<'a>> for Option<Value> {
 		let span = token.span;
 		match token.kind {
 			TokenKind::Number => Some(Value::new_number(span, token)),
-			TokenKind::String => Some(Value::new_string(span, token.trim(1))),
+			TokenKind::String => Some(Value::new_string(span, token)),
 			TokenKind::Identifier => match token.value() {
 				"false" => Some(Value::new_bool(span, false)),
 				"true" => Some(Value::new_bool(span, true)),

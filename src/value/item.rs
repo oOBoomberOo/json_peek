@@ -4,7 +4,7 @@ use std::hash::{Hash, Hasher};
 #[derive(Debug, Clone, Copy)]
 pub struct Item<T> {
 	span: Span,
-	value: T
+	value: T,
 }
 
 impl<T> Item<T> {

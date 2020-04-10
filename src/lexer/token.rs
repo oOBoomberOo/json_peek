@@ -6,12 +6,16 @@ use std::str::FromStr;
 pub struct Token<'a> {
 	pub span: Span,
 	source: &'a str,
-	pub kind: TokenKind
+	pub kind: TokenKind,
 }
 
 impl<'a> Token<'a> {
 	pub const fn new(span: Span, source: &'a str, kind: TokenKind) -> Token<'a> {
 		Token { span, source, kind }
+	}
+
+	pub fn value(&self) -> &str {
+		&self.source[self.span.range()]
 	}
 
 	pub const fn new_number(span: Span, source: &'a str) -> Token<'a> {
@@ -32,10 +36,6 @@ impl<'a> Token<'a> {
 
 	pub const fn new_unknown(span: Span, source: &'a str) -> Token<'a> {
 		Token::new(span, source, TokenKind::Unknown)
-	}
-
-	pub fn value(&self) -> &str {
-		&self.source[self.span.range()]
 	}
 
 	pub const fn trim(&self, offset: usize) -> Token<'a> {
@@ -112,5 +112,5 @@ pub enum TokenKind {
 	Number,
 	Symbol,
 	Identifier,
-	Unknown
+	Unknown,
 }

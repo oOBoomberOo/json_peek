@@ -1,11 +1,11 @@
-use std::ops::{Add, Sub, AddAssign, SubAssign};
-use std::ops::RangeInclusive;
 use std::fmt;
+use std::ops::RangeInclusive;
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 #[derive(Clone, Copy, PartialEq, Eq, Default, Hash)]
 pub struct Span {
 	pub start: usize,
-	pub end: usize
+	pub end: usize,
 }
 
 impl Span {
@@ -18,11 +18,17 @@ impl Span {
 	}
 
 	pub const fn start_point(&self) -> Span {
-		Span { start: self.start, end: self.start }
+		Span {
+			start: self.start,
+			end: self.start,
+		}
 	}
 
 	pub const fn end_point(&self) -> Span {
-		Span { start: self.end, end: self.end }
+		Span {
+			start: self.end,
+			end: self.end,
+		}
 	}
 
 	/// Zero-width `Span` is considered to be a point
@@ -54,7 +60,7 @@ impl Add<usize> for Span {
 	fn add(self, rhs: usize) -> Span {
 		Span {
 			start: self.start,
-			end: self.end + rhs
+			end: self.end + rhs,
 		}
 	}
 }
@@ -65,7 +71,7 @@ impl Sub<usize> for Span {
 	fn sub(self, rhs: usize) -> Span {
 		Span {
 			start: self.start,
-			end: self.end - rhs
+			end: self.end - rhs,
 		}
 	}
 }
@@ -88,7 +94,7 @@ impl Add<Span> for Span {
 	fn add(self, rhs: Span) -> Span {
 		Span {
 			start: self.start + rhs.start,
-			end: self.end + rhs.end
+			end: self.end + rhs.end,
 		}
 	}
 }
@@ -99,7 +105,7 @@ impl Sub<Span> for Span {
 	fn sub(self, rhs: Span) -> Span {
 		Span {
 			start: self.start - rhs.start,
-			end: self.end - rhs.end
+			end: self.end - rhs.end,
 		}
 	}
 }
@@ -144,11 +150,17 @@ mod tests {
 
 	#[test]
 	fn add_span() {
-		assert_eq!(Span::new(0, 9) + Span::new(5, 8), Span { start: 5, end: 17 });
+		assert_eq!(
+			Span::new(0, 9) + Span::new(5, 8),
+			Span { start: 5, end: 17 }
+		);
 	}
 
 	#[test]
 	fn sub_span() {
-		assert_eq!(Span::new(5, 10) - Span::new(3, 4), Span { start: 2, end: 6 });
+		assert_eq!(
+			Span::new(5, 10) - Span::new(3, 4),
+			Span { start: 2, end: 6 }
+		);
 	}
 }

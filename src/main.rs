@@ -1,4 +1,4 @@
-use json_parser::parser::Parser;
+use json_parser::util;
 
 fn main() {
 	let content = r#"
@@ -7,12 +7,10 @@ fn main() {
 		"bar": 2
 	}
 	"#;
-
-	let mut parser = Parser::new(content);
-	let result = parser.parse_all();
+	let result = util::from_str(content);
 
 	match result {
 		Ok(v) => println!("{:#?}", v),
-		Err(e) => println!("{}", e)
+		Err(e) => println!("{}", e),
 	}
 }
