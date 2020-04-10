@@ -129,6 +129,12 @@ impl fmt::Display for Span {
 	}
 }
 
+impl From<RangeInclusive<usize>> for Span {
+	fn from(range: RangeInclusive<usize>) -> Span {
+		Span::new(*range.start(), *range.end())
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;

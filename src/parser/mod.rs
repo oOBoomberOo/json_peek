@@ -123,8 +123,8 @@ mod tests {
 		let result = parser.parse().unwrap();
 
 		let map = hashmap! {
-			Value::test_string("foo") => Value::test_number(42.0)
-			Value::test_string("bar") => Value::test_number(0.0)
+			Value::test_string("foo") => Value::test_number("42")
+			Value::test_string("bar") => Value::test_number("0")
 		};
 
 		assert_eq!(result, Value::test_object(map));
@@ -149,9 +149,9 @@ mod tests {
 		assert_eq!(
 			result,
 			Value::test_object(hashmap! {
-				Value::test_string("foo") => Value::test_number(42.0)
+				Value::test_string("foo") => Value::test_number("42")
 				Value::test_string("bar") => Value::test_object(hashmap! {
-					Value::test_string("a") => Value::test_array(vec![Value::test_number(1.0), Value::test_number(2.0), Value::test_number(3.0)])
+					Value::test_string("a") => Value::test_array(vec![Value::test_number("1"), Value::test_number("2"), Value::test_number("3")])
 					Value::test_string("b") => Value::test_bool(false)
 				})
 				Value::test_string("baz") => Value::test_null()
