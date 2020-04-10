@@ -2,7 +2,7 @@ use crate::lexer::{Token, TokenKind};
 use crate::util::Span;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
-use std::ops::{Index};
+use std::ops::Index;
 
 mod index;
 mod item;
@@ -22,6 +22,24 @@ pub enum Value {
 impl Value {
 	pub const fn null() -> Value {
 		Self::new_null(Span::new(0, 0))
+	}
+
+	pub fn get(&self, key: impl Into<Value>) -> Option<&Value> {
+		let key = key.into();
+		if let Self::Object(item) = self {
+			item.value.get(&key)
+		} else {
+			None
+		}
+	}
+
+	pub fn index(&self, index: impl Into<usize>) -> Option<&Value> {
+		let index = index.into();
+		if let Self::Array(item) = self {
+			item.value.get(index)
+		} else {
+			None
+		}
 	}
 
 	pub fn is_object(&self) -> bool {
@@ -219,5 +237,18 @@ mod tests {
 		});
 
 		assert_eq!(sample_data["a"], Value::test_number("1"));
+	}
+
+	#[test]
+	fn index_invalid_item() {
+		let sample_data = Value::test_object({
+			let mut map = HashMap::new();
+			map.insert(Value::test_string("a"), Value::test_number("1"));
+			map.insert(Value::test_string("b"), Value::test_number("2"));
+			map.insert(Value::test_string("c"), Value::test_number("3"));
+			map
+		});
+
+		assert_eq!(sample_data["d"], Value::test_null());
 	}
 }
