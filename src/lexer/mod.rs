@@ -8,6 +8,18 @@ pub use token::{Token, TokenKind};
 /// Shorthand for Lexer to use
 pub type TokenStream<'a> = Peekable<CharIndices<'a>>;
 
+/// A Token Lexer which take string and convert it into a list of [Token](struct.Token.html)
+/// 
+/// ```
+/// # use json_peek::lexer::{Lexer};
+/// let content = r#"{"foo": 1}"#;
+/// let lexer = Lexer::new(content);
+/// 
+/// let tokens = lexer.lex();
+/// ```
+/// 
+/// You are probably getting tired of bad documentation like this so here's megumin:
+/// ![](https://i.redd.it/nz2ecwpyp3k01.jpg)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Lexer<'a> {
 	source: &'a str,
@@ -17,7 +29,7 @@ impl<'a> Lexer<'a> {
 	/// Create Lexer to `source`
 	///
 	/// ```
-	/// # use json_parser::lexer::{Lexer, Token};
+	/// # use json_peek::lexer::{Lexer, Token};
 	/// let content = r#"{ "foo": null, "bar": false }"#;
 	/// let lexer = Lexer::new(content);
 	/// let mut token = lexer.into_iter();
@@ -37,6 +49,11 @@ impl<'a> Lexer<'a> {
 	pub const fn new(source: &'a str) -> Lexer<'a> {
 		Lexer { source }
 	}
+
+	/// Easily create a `Vec` of [Token](struct.Token.html)
+	pub fn lex(self) -> Vec<Token<'a>> {
+		self.into_iter().collect()
+	}
 }
 
 impl<'a> IntoIterator for Lexer<'a> {
@@ -50,6 +67,9 @@ impl<'a> IntoIterator for Lexer<'a> {
 	}
 }
 
+/// An iterator that generate [Token](struct.Token.html) from given `&str`
+/// 
+/// You shouldn't manually create this iterator but rather use [Lexer](struct.Lexer.html) instead.
 #[derive(Debug, Clone)]
 pub struct LexerIter<'a> {
 	source: &'a str,
@@ -77,12 +97,12 @@ impl<'a> LexerIter<'a> {
 		self.previous_token() == Some(token)
 	}
 
-	/// Get `char` before the current token.
+	/// Get a `char` before the current token.
 	///
 	/// Can be `None` if this is the beginning of iterator or this is emoji, I really need to make this compatible with UTF-8 /shrug
 	///
 	/// ```
-	/// # use json_parser::lexer::Lexer;
+	/// # use json_peek::lexer::Lexer;
 	/// let mut lexer = Lexer::new("177013").into_iter();
 	/// lexer.next();
 	/// assert_eq!(lexer.previous_token(), Some('1'));
@@ -123,7 +143,7 @@ impl<'a> LexerIter<'a> {
 	}
 
 	/// Lex string literal
-	pub fn lex_string(&mut self) -> Token<'a> {
+	fn lex_string(&mut self) -> Token<'a> {
 		self.lex_until(|token, iter| {
 			!token.is_quote() || iter.previous_token_is('\\') || iter.span.is_point()
 		});
@@ -131,13 +151,19 @@ impl<'a> LexerIter<'a> {
 	}
 
 	/// Lex identifier literal
-	pub fn lex_identifier(&mut self) -> Token<'a> {
+	/// 
+	/// Can be represent in regex form as `[\d\w_]+`
+	fn lex_identifier(&mut self) -> Token<'a> {
 		self.lex_while(|x, _| x.is_identifier());
 		Token::new_identifier(self.span, self.source)
 	}
 
 	/// Lex number literal
-	pub fn lex_number(&mut self) -> Token<'a> {
+	/// 
+	/// Can be represent in regex form as `[\d\-.]+`
+	fn lex_number(&mut self) -> Token<'a> {
+		// NOTE: `is_number()` method will interpret more than `[0-9]` as number
+		// Maybe don't use that?
 		self.lex_while(|x, _| x.is_number());
 		Token::new_number(self.span, self.source)
 	}
@@ -247,5 +273,105 @@ mod tests {
 		assert_eq!(lexer.next(), Token::test_symbol("}").into());
 		assert_eq!(lexer.next(), Token::test_symbol("}").into());
 		assert_eq!(lexer.next(), None);
+	}
+
+	#[test]
+	fn lexer_with_extra_comma() {
+		let content = r#"
+		{
+			"foo": 1,
+			"bar": 2,
+		}
+		"#;
+
+		let mut lexer = Lexer::new(content).into_iter();
+
+		assert_eq!(lexer.next(), Token::test_symbol("{").into());
+		assert_eq!(lexer.next(), Token::test_string("foo").into());
+		assert_eq!(lexer.next(), Token::test_symbol(":").into());
+		assert_eq!(lexer.next(), Token::test_number("1").into());
+		assert_eq!(lexer.next(), Token::test_symbol(",").into());
+		assert_eq!(lexer.next(), Token::test_string("bar").into());
+		assert_eq!(lexer.next(), Token::test_symbol(":").into());
+		assert_eq!(lexer.next(), Token::test_number("2").into());
+		assert_eq!(lexer.next(), Token::test_symbol(",").into());
+		assert_eq!(lexer.next(), Token::test_symbol("}").into());
+		assert_eq!(lexer.next(), None);
+	}
+
+	#[test]
+	fn use_lex_function() {
+		let content = r#"{
+			"display": {
+				"title": "Boomber",
+				"description": "",
+				"icon": {
+					"item": "minecraft:player_head",
+					"nbt": "{SkullOwner: 'Boomber'}"
+				},
+				"show_toast": false,
+				"announce_to_chat": false
+			},
+			"parent": "global:root",
+			"criteria": {
+				"trigger": {
+					"trigger": "minecraft:tick"
+				}
+			}
+		}"#;
+
+		let tokens = Lexer::new(content).lex();
+		
+		assert_eq!(tokens, vec![
+			Token::test_symbol("{"),
+			Token::test_string("display"),
+			Token::test_symbol(":"),
+			Token::test_symbol("{"),
+			Token::test_string("title"),
+			Token::test_symbol(":"),
+			Token::test_string("Boomber"),
+			Token::test_symbol(","),
+			Token::test_string("description"),
+			Token::test_symbol(":"),
+			Token::test_string(""),
+			Token::test_symbol(","),
+			Token::test_string("icon"),
+			Token::test_symbol(":"),
+			Token::test_symbol("{"),
+			Token::test_string("item"),
+			Token::test_symbol(":"),
+			Token::test_string("minecraft:player_head"),
+			Token::test_symbol(","),
+			Token::test_string("nbt"),
+			Token::test_symbol(":"),
+			Token::test_string("{SkullOwner: 'Boomber'}"),
+			Token::test_symbol("}"),
+			Token::test_symbol(","),
+			Token::test_string("show_toast"),
+			Token::test_symbol(":"),
+			Token::test_identifier("false"),
+			Token::test_symbol(","),
+			Token::test_string("announce_to_chat"),
+			Token::test_symbol(":"),
+			Token::test_identifier("false"),
+			Token::test_symbol("}"),
+			Token::test_symbol(","),
+			Token::test_string("parent"),
+			Token::test_symbol(":"),
+			Token::test_string("global:root"),
+			Token::test_symbol(","),
+			Token::test_string("criteria"),
+			Token::test_symbol(":"),
+			Token::test_symbol("{"),
+			Token::test_string("trigger"),
+			Token::test_symbol(":"),
+			Token::test_symbol("{"),
+			Token::test_string("trigger"),
+			Token::test_symbol(":"),
+			Token::test_string("minecraft:tick"),
+			Token::test_symbol("}"),
+			Token::test_symbol("}"),
+			Token::test_symbol("}"),
+		]);
 	}
 }

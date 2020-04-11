@@ -1,4 +1,4 @@
-use json_parser::util;
+use json_peek::util;
 
 fn main() {
 	let content = r#"

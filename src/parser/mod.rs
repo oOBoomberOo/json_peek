@@ -10,12 +10,17 @@ pub use error::ParseError;
 
 pub type ParseResult<'a> = Result<Value, ParseError<'a>>;
 
+/// A struct for creating JSON's syntax tree from [Tokens](../lexer/struct.Token.html)
 pub struct Parser<'a> {
 	inner: LexerIter<'a>,
 	pos: Span,
 }
 
 impl<'a> Parser<'a> {
+
+	/// Create new Parser from given string
+	/// 
+	/// Note: This method also create [LexerIter](../lexer/struct.LexerIter.html) as well
 	pub fn new(source: &'a str) -> Parser<'a> {
 		let inner = Lexer::new(source).into_iter();
 		let pos = Span::default();

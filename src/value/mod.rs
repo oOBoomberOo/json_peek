@@ -75,6 +75,12 @@ impl Value {
 		}
 	}
 
+	/// Transform `Value` into `Some(Value)` of itself.
+	/// This is helpful for testing since most of the operation return an `Option<Value>`
+	pub const fn some(self) -> Option<Self> {
+		Some(self)
+	}
+
 	pub fn new_object(span: Span, value: HashMap<Literal, Value>) -> Value {
 		let item = Item::new(span, value);
 		Value::Object(item)
@@ -107,38 +113,28 @@ impl Value {
 		Value::Bool(item)
 	}
 
-	#[cfg(test)]
 	pub fn test_object(value: HashMap<Literal, Value>) -> Value {
 		Value::new_object(Span::test(), value)
 	}
 
-	#[cfg(test)]
 	pub fn test_array(value: Vec<Value>) -> Value {
 		Value::new_array(Span::test(), value)
 	}
 
-	#[cfg(test)]
 	pub fn test_string(value: &str) -> Value {
 		Value::new_string(Span::test(), value)
 	}
 
-	#[cfg(test)]
 	pub fn test_number(value: &str) -> Value {
 		Value::new_number(Span::test(), value)
 	}
 
-	#[cfg(test)]
 	pub fn test_null() -> Value {
 		Value::new_null(Span::test())
 	}
 
-	#[cfg(test)]
 	pub fn test_bool(value: bool) -> Value {
 		Value::new_bool(Span::test(), value)
-	}
-
-	pub const fn some(self) -> Option<Self> {
-		Some(self)
 	}
 }
 
@@ -258,6 +254,7 @@ impl<'a, K> Keyable<'a, K> for Option<Value> where K: Into<Literal> {
 	}
 }
 
+#[doc(hidden)]
 pub mod prelude {
 	pub use super::{Value, Indexable, Keyable};
 }
