@@ -46,4 +46,6 @@ pub mod parser;
 pub mod util;
 pub mod value;
 
-pub use value::Value;
+pub use value::{Value, Indexable, Keyable};
+pub use parser::Parser;
+pub use parser::{Lexer, Token};
