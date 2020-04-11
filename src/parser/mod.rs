@@ -1,6 +1,8 @@
-use crate::lexer::{Lexer, LexerIter, Token};
-use crate::util::Span;
-use crate::value::Value;
+use crate::{
+	lexer::{Lexer, LexerIter, Token, TokenKind},
+	util::Span,
+	value::{Literal, Value},
+};
 use std::collections::HashMap;
 
 mod error;
@@ -29,9 +31,11 @@ impl<'a> Parser<'a> {
 
 		if token == '{' {
 			self.parse_object(token)
-		} else if token == '[' {
+		}
+		else if token == '[' {
 			self.parse_array(token)
-		} else {
+		}
+		else {
 			self.parse_other(token)
 		}
 	}
@@ -41,7 +45,11 @@ impl<'a> Parser<'a> {
 		let mut last_token = token;
 
 		while let Some(token) = self.inner.next() {
-			let key = self.parse_other(token)?;
+			if token.kind == TokenKind::Symbol {
+				return Err(ParseError::InvalidToken(token));
+			}
+
+			let key = Literal::from(token);
 
 			if let Some(token) = self.inner.next() {
 				if token != ':' {
@@ -54,13 +62,15 @@ impl<'a> Parser<'a> {
 
 			let token = self
 				.inner
-				.next()
-				.ok_or(ParseError::UnexpectedEndOfFile(self.pos))?;
+				.next();
+
+			let token = dbg!(token).ok_or(ParseError::UnexpectedEndOfFile(self.pos))?;
 			last_token = token;
 
 			if token == '}' {
 				break;
-			} else if token != ',' {
+			}
+			else if token != ',' {
 				return Err(ParseError::UnexpectedToken(token, Token::test_symbol(",")));
 			}
 		}
@@ -80,7 +90,8 @@ impl<'a> Parser<'a> {
 
 			if token == ']' {
 				break;
-			} else if token != ',' {
+			}
+			else if token != ',' {
 				return Err(ParseError::UnexpectedToken(token, Token::test_symbol(",")));
 			}
 			list.push(self.parse()?);
@@ -95,7 +106,7 @@ impl<'a> Parser<'a> {
 	}
 }
 
-#[macro_export]
+#[cfg(test)]
 macro_rules! hashmap {
 	($($x:expr => $y:expr)* ) => {
 		{
@@ -123,8 +134,8 @@ mod tests {
 		let result = parser.parse().unwrap();
 
 		let map = hashmap! {
-			Value::test_string("foo") => Value::test_number("42")
-			Value::test_string("bar") => Value::test_number("0")
+			Literal::new_literal("foo") => Value::test_number("42")
+			Literal::new_literal("bar") => Value::test_number("0")
 		};
 
 		assert_eq!(result, Value::test_object(map));
@@ -149,12 +160,12 @@ mod tests {
 		assert_eq!(
 			result,
 			Value::test_object(hashmap! {
-				Value::test_string("foo") => Value::test_number("42")
-				Value::test_string("bar") => Value::test_object(hashmap! {
-					Value::test_string("a") => Value::test_array(vec![Value::test_number("1"), Value::test_number("2"), Value::test_number("3")])
-					Value::test_string("b") => Value::test_bool(false)
+				Literal::new_literal("foo") => Value::test_number("42")
+				Literal::new_literal("bar") => Value::test_object(hashmap! {
+					Literal::new_literal("a") => Value::test_array(vec![Value::test_number("1"), Value::test_number("2"), Value::test_number("3")])
+					Literal::new_literal("b") => Value::test_bool(false)
 				})
-				Value::test_string("baz") => Value::test_null()
+				Literal::new_literal("baz") => Value::test_null()
 			})
 		);
 	}
