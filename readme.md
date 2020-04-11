@@ -1,6 +1,6 @@
-# Json-Peek
+# JSON Peek
 
-Json Peek is an amature JSON parser written for my specific need. Don't expect this to be efficient or perfect.
+JSON Peek is an amature JSON parser written for my specific need. Don't expect this to be efficient or perfect.
 
 This library is designed to parse JSON while also keeping track of position information which can then be use inside [codespan-reporting](https://github.com/brendanzab/codespan) crate.
 

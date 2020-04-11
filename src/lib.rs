@@ -48,4 +48,4 @@ pub mod value;
 
 pub use value::{Value, Indexable, Keyable};
 pub use parser::Parser;
-pub use parser::{Lexer, Token};
+pub use lexer::{Lexer, Token};
