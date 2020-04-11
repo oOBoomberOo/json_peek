@@ -3,6 +3,10 @@ name = "json-peek"
 version = "0.0.1"
 authors = ["oOBoomberOo <boombercmd123@gmail.com>"]
 edition = "2018"
+license = "MIT"
+description = "Amature JSON parser library designed for my specific need"
+categories = ["text-processing"]
+keywords = ["json"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
